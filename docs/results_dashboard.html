@@ -196,13 +196,23 @@
     </section>
 
     <section id="methods">
-      <div class="ey">06 — Reproducibility</div>
-      <h2>Methods &amp; provenance</h2>
+      <div class="ey">06 — Methods &amp; provenance</div>
+      <h2>Methods by aim</h2>
+      <p class="lead">Three public clinical-genomic cohorts — GENIE BPC BRCA, TCGA, and Breast MSK 2018 — harmonized to a single canonical schema and run through a consistent statistical and machine-learning stack.</p>
+      <div style="overflow-x:auto">
+      <table class="spec">
+        <tr><th>Aim</th><th>Question</th><th>Methods</th></tr>
+        <tr><td><strong>1 · Association</strong></td><td>Which genes / oncogenic pathways are enriched in brain-met patients?</td><td>Fisher exact, prevalence ratios (log-normal 95% CI), BH correction, logistic regression, forest plots, oncoprints</td></tr>
+        <tr><td><strong>2 · Time to brain met</strong></td><td>Time from diagnosis to brain metastasis (no-CNS-at-dx cohort)</td><td>Kaplan-Meier + log-rank, Cox PH + Schoenfeld, AFT distribution selection</td></tr>
+        <tr><td><strong>3 · OS &amp; PFS</strong></td><td>Survival in the brain-mets-ever cohort</td><td>Same KM / Cox / AFT machinery, minimum-events guard</td></tr>
+        <tr><td><strong>ML benchmark</strong></td><td>Predictive survival modeling</td><td>XGBoost-AFT (primary), Random Survival Forest, Gradient-Boosted Survival, LightGBM; Harrell + IPCW C-index; SHAP explainability</td></tr>
+      </table>
+      </div>
+      <h3>Data &amp; provenance</h3>
       <ul class="clean">
-        <li><strong>Classical inference:</strong> Kaplan-Meier + log-rank, Cox proportional hazards with scaled Schoenfeld diagnostics, and AFT distribution selection (Weibull / lognormal / log-logistic by AIC) via <code>lifelines</code>.</li>
-        <li><strong>Association:</strong> Fisher exact tests, prevalence ratios with log-normal 95% CIs, and Benjamini-Hochberg correction over top genes and Sanchez-Vega oncogenic pathways.</li>
-        <li><strong>ML benchmark:</strong> XGBoost with the survival-AFT objective (primary), plus Random Survival Forest, Gradient-Boosted Survival, and LightGBM, scored by Harrell &amp; IPCW C-index over stratified 5-fold CV, with SHAP explainability.</li>
-        <li><strong>Figures shown here</strong> are viewer-optimized (downscaled, palette-quantized) for fast browsing; the manuscript PDFs/PNGs remain the source of truth.</li>
+        <li>Raw and derived data (cBioPortal / GENIE exports, harmonized analytic CSVs) are <strong>not tracked in version control</strong> — the pipeline reads them from a local <code>data/processed/</code> root.</li>
+        <li>Operates on <strong>de-identified public datasets</strong> for research and manuscript preparation; it is <strong>not a clinical tool</strong>.</li>
+        <li>Figures shown here are viewer-optimized (downscaled, palette-quantized) for fast browsing; the manuscript PDFs/PNGs remain the source of truth.</li>
       </ul>
       <p class="tblnote">Generated from the executed analysis notebooks · GENIE BPC v1.0-public BRCA.</p>
     </section>
