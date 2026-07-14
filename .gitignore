@@ -29,3 +29,19 @@ __pycache__/
 *.key
 *.pem
 credentials*
+
+# --- Data excluded (code-only per data-use agreement) ---
+data/
+**/msk_retrieved_data/
+**/retrieved_tcga_data/
+**/retrieved_genie_data/
+**/extracted_variables_*
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.maf
+.venv/
+node_modules/
+.claude/
+.DS_Store
