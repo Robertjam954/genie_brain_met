@@ -1,0 +1,31 @@
+# --- Data (raw + derived caches) — excluded from version control ---
+data/
+**/retrieved_genie_data/
+**/retrieved_tcga_data/
+**/msk_retrieved_data/
+*.xlsx
+*.parquet
+*.gz
+
+# --- Python / R / OS caches ---
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+.Rproj.user/
+.RData
+.Rhistory
+.Rapp.history
+
+# --- Editor / tooling ---
+.claude/
+.vscode/
+.idea/
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials*
