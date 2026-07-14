@@ -10,7 +10,7 @@ analyses feeding a scientific manuscript.
 
 | Aim | Question | Methods |
 |-----|----------|---------|
-| **1 — Association** | Which genes / oncogenic pathways are enriched in brain-met patients? | Fisher exact, prevalence ratios (log-normal 95% CI), BH correction, logistic regression, forest plots, oncoprints |
+| **1 - Association** | Which genes / oncogenic pathways are enriched in brain-met patients? | Fisher exact, prevalence ratios (log-normal 95% CI), BH correction, logistic regression, forest plots, oncoprints |
 | **2 — Time to brain met** | Time from diagnosis to brain metastasis (no-CNS-at-dx cohort) | Kaplan-Meier + log-rank, Cox PH + Schoenfeld, AFT distribution selection |
 | **3 — Overall survival & PFS** | Survival in the brain-mets-ever cohort | Same KM / Cox / AFT machinery, minimum-events guard |
 | **ML benchmark** | Predictive survival modeling | XGBoost-AFT (primary), Random Survival Forest, Gradient-Boosted Survival, LightGBM; Harrell + IPCW C-index; SHAP explainability |
