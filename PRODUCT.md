@@ -1,5 +1,10 @@
 # Product
 
+> **Status caveat.** This is an active research work-in-progress. The specific results shown
+> in `docs/results_dashboard.html` and the methods narratives have not been independently
+> re-verified and may contain errors; treat all reported numbers as provisional. This
+> document describes intended capabilities and methods, not confirmed findings.
+
 ## What this project is
 
 A research analytics pipeline investigating the genomic and clinical drivers of
@@ -50,10 +55,15 @@ The work is organized around three analytic aims, each runnable per cohort:
   oncogenic pathway flags.
 - **Classical and ML survival analysis side by side.** Cox PH (with assumption diagnostics),
   AFT, and XGBoost-AFT, allowing comparison of interpretable and predictive approaches.
-- **Manuscript-ready outputs.** Results are emitted both as CSV result tables
-  (`src/data reports/`) and as publication figures/PDFs (`manuscript components/`).
-- **Reproducibility.** Cohort definitions, gene lists, and covariate handling are centralized
-  in shared code (`src/modeling/_lib.py`) and driven by cohort keys.
+- **Manuscript-oriented outputs.** Analyses emit CSV result tables (Aim scripts write to
+  `src/modeling/<cohort>/aimN/`; a GENIE Aim 1 subset is committed under `src/data reports/`)
+  and publication figures/PDFs (`manuscript components/`, `reports/figures/`). Output
+  coverage in the repo is currently partial - primarily GENIE Aim 1 tables plus rendered
+  figures - so not every aim/cohort listed above has committed result files.
+- **Centralized configuration.** Cohort definitions, gene lists, and covariate handling are
+  centralized in shared code (`src/modeling/_lib.py`) and driven by cohort keys, so the same
+  analysis runs across cohorts. Note the repo does not yet pin a Python/R environment
+  (no `requirements.txt` / `environment.yml` / `renv.lock`), which is a reproducibility gap.
 
 ## Intended users and use cases
 

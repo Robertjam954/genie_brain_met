@@ -1,15 +1,27 @@
-# --- Data (raw + derived caches) — excluded from version control ---
-data/
+# === Data (code-only per the GENIE BPC data-use agreement) ================
+# Never commit patient-level or controlled-access data. The folder STRUCTURE is
+# tracked via .gitkeep + data/README.md; every real data file is ignored.
+data/**
+!data/**/
+!data/**/.gitkeep
+!data/README.md
 **/retrieved_genie_data/
 **/retrieved_tcga_data/
 **/msk_retrieved_data/
+**/extracted_variables_*
+*.csv
+*.tsv
 *.xlsx
+*.xls
+*.maf
 *.parquet
 *.gz
 
-# --- Python / R / OS caches ---
+# === Python / R / OS caches ===============================================
 __pycache__/
 *.pyc
+.venv/
+node_modules/
 .DS_Store
 .ipynb_checkpoints/
 .Rproj.user/
@@ -17,31 +29,15 @@ __pycache__/
 .Rhistory
 .Rapp.history
 
-# --- Editor / tooling ---
+# === Editor / tooling =====================================================
 .claude/
 .vscode/
 .idea/
 
-# --- Secrets ---
+# === Secrets ==============================================================
 .env
 .env.*
 !.env.example
 *.key
 *.pem
 credentials*
-
-# --- Data excluded (code-only per data-use agreement) ---
-data/
-**/msk_retrieved_data/
-**/retrieved_tcga_data/
-**/retrieved_genie_data/
-**/extracted_variables_*
-*.csv
-*.tsv
-*.xlsx
-*.xls
-*.maf
-.venv/
-node_modules/
-.claude/
-.DS_Store

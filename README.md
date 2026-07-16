@@ -1,42 +1,170 @@
-# GENIE / TCGA / IMPACT — Breast-Cancer Brain Metastasis
+# GENIE / TCGA / IMPACT - Breast-Cancer Brain Metastasis
 
-A reproducible clinical-genomics research pipeline investigating the genomic and
-clinical drivers of **breast-cancer brain metastasis**. Three public clinical-genomic
-cohorts — GENIE BPC BRCA, TCGA, and Breast MSK 2018 — are harmonized to a single
-canonical schema and run through a consistent set of statistical and machine-learning
-analyses feeding a scientific manuscript.
+A clinical-genomics research pipeline investigating the genomic and clinical drivers of
+**breast-cancer brain metastasis**. Three public clinical-genomic cohorts - GENIE BPC BRCA,
+TCGA BRCA, and Breast MSK 2018 - are harmonized to a single canonical schema and run through
+a consistent set of statistical and machine-learning analyses that feed a scientific
+manuscript.
+
+> **Status / verification note.** This repository is an active research work-in-progress.
+> The narrative results in `docs/results_dashboard.html` and the methods write-ups have
+> **not been independently re-verified** and may contain errors; treat every specific
+> number (cohort sizes, prevalences, p/q-values, hazard ratios, concordance indices) as
+> provisional pending author review. This README describes the **pipeline structure**
+> (what each script reads, writes, and does) rather than asserting any scientific finding.
 
 ## Analytic aims
 
-| Aim | Question | Methods |
-|-----|----------|---------|
-| **1 - Association** | Which genes / oncogenic pathways are enriched in brain-met patients? | Fisher exact, prevalence ratios (log-normal 95% CI), BH correction, logistic regression, forest plots, oncoprints |
-| **2 — Time to brain met** | Time from diagnosis to brain metastasis (no-CNS-at-dx cohort) | Kaplan-Meier + log-rank, Cox PH + Schoenfeld, AFT distribution selection |
-| **3 — Overall survival & PFS** | Survival in the brain-mets-ever cohort | Same KM / Cox / AFT machinery, minimum-events guard |
-| **ML benchmark** | Predictive survival modeling | XGBoost-AFT (primary), Random Survival Forest, Gradient-Boosted Survival, LightGBM; Harrell + IPCW C-index; SHAP explainability |
+| Aim | Question | Methods (as implemented) |
+|-----|----------|--------------------------|
+| **1 - Association** | Which genes / oncogenic pathways are enriched in brain-met patients? | 2x2 contingency tables, Fisher exact, prevalence ratios with log-normal CIs, multiple-testing correction, logistic regression, forest plots, oncoprints |
+| **2 - Time to brain met** | Time from diagnosis to brain metastasis, in the no-CNS-at-diagnosis cohort | Kaplan-Meier + log-rank, Cox PH + scaled Schoenfeld diagnostics, AFT distribution selection by AIC |
+| **3 - Overall survival** | Overall survival in the brain-mets-ever cohort | Same KM / Cox / AFT machinery, with a minimum-events guard |
+| **ML benchmark** | Predictive survival modeling | XGBoost with the AFT objective, concordance-index evaluation, SHAP-based feature importance (Python + R) |
 
 ## Repository layout
 
 ```
-notebooks/        Executed analysis notebooks (Aims 1–3 + ML benchmark)
 src/
-  data collection and processing/   Harmonization ETL + canonical schema spec
-  exploratory data analysis/        Aim 1 association analyses
-  modeling/                         Aim 2/3 survival + XGBoost-AFT modeling
-docs/
-  results_dashboard.html            Interactive browser of all 32 figures
-  plans/                            Execution / implementation plans
-manuscript components/              Publication figures (PDF/PNG)
-references/                         Source papers, manuscript structure
+  data collection and processing/   Raw pull (R) + harmonization ETL (Python) + schema spec
+  exploratory data analysis/        Aim 1 association analyses; also holds the harmonized
+                                    extracted_variables_<cohort>_* CSV caches
+  modeling/                         _lib.py shared backbone + Aim 2/3 survival + XGBoost-AFT
+  data reports/                     Generated CSV result tables (currently genie/aim1 only)
+notebooks/                          Descriptive / OS / time-to-brain-met plotting notebooks
+reports/figures/                    Rendered PNG figures (aim1, aim2, aim3, ml_benchmark)
+manuscript components/             Publication-figure PDFs/PNGs (currently genie/aim1 only)
+docs/                               results_dashboard.html + manuscript-planning PDFs + plans
+references/                         Source-paper PDFs and study materials
+data/                              Raw / master workbooks (git-ignored; see Data below)
 ```
 
-See [`PRODUCT.md`](PRODUCT.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full
-product and architecture overview, and [`docs/results_dashboard.html`](docs/results_dashboard.html)
-for the interactive figure dashboard.
+See [`PRODUCT.md`](PRODUCT.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the product and
+architecture overview, [`CONTRIBUTING.md`](CONTRIBUTING.md) for developer conventions, and
+`docs/results_dashboard.html` for the (unverified) figure dashboard.
 
-## Data
+## Prerequisites and setup
 
-Raw and derived data (cBioPortal / GENIE exports, harmonized analytic CSVs) are **not**
-tracked in git — they are large and de-identified but out of scope for VCS. The pipeline
-reads them from a local `data/processed/` root. This project operates on de-identified
-public datasets for research and manuscript preparation; it is **not** a clinical tool.
+There is **no pinned environment file in the repo** (no `requirements.txt`,
+`environment.yml`, or `renv.lock`). This is a known gap - set up the environment manually,
+and consider adding a pinned spec.
+
+### Python
+
+```zsh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pandas numpy scipy scikit-learn statsmodels lifelines xgboost \
+            matplotlib seaborn openpyxl shap
+# Some scripts/notebooks additionally reference: lightgbm, optuna, scikit-survival (sksurv)
+```
+
+Python 3.9+ is recommended (`_lib.py` uses `from __future__ import annotations` and modern
+type hints). XGBoost must be >= 1.6 for the AFT objective. Not every environment on the
+author's machine currently has the full survival stack installed
+(see `docs/plans/finish-project-run-notebooks-plan.md`).
+
+### R
+
+```r
+install.packages(c("dplyr", "readr", "tidyr", "purrr", "stringr", "data.table",
+                   "openxlsx", "broom", "lubridate", "xgboost", "SHAPforxgboost"))
+```
+
+### Data
+
+Raw and derived data are **git-ignored** (see `.gitignore`: `data/`, `*.csv`, `*.xlsx`,
+`**/extracted_variables_*`, the `*_retrieved_data/` folders). This project operates on
+de-identified public datasets for research; it is **not** a clinical tool. Never commit raw
+or identifiable patient data.
+
+The pipeline reads raw cohort exports from **local, machine-specific absolute paths**
+(the R pull scripts point at `/Users/robertjames/loc/data private/...`; the notebooks
+hard-code a `PROJ` root under the author's iCloud `Documents`). You will need to adjust
+those paths for your own machine.
+
+> **Prerequisite gap.** `_lib.load_cohort()` expects the harmonized frames at
+> `data/processed/extracted_variables_<cohort>_data.csv`, but this directory is **not
+> present in the repo**, and the harmonize scripts actually *write* their outputs into
+> `src/exploratory data analysis/`. In practice the analytic CSVs must be placed under
+> `data/processed/` for the modeling scripts to find them. Do not assume the ETL has been
+> run end-to-end here; verify the inputs exist before running any analysis stage.
+
+## Pipeline run order
+
+The pipeline runs stage by stage. Paths below are relative to the repo root; several scripts
+use absolute, machine-specific paths internally and will need editing.
+
+1. **Raw pull (R)** - read raw cBioPortal / GENIE / GDC exports and gene annotations, emit a
+   consolidated workbook.
+   ```zsh
+   Rscript "src/data collection and processing/pull_genie_data.R"
+   ```
+   Input: private cBioPortal study folders + `data/hugo_symbols.xlsx`.
+   Output: `data/extracted_variables_of_interest.xlsx`.
+   (`extract_variables_of_interest.R` appears to be a near-duplicate of this script.)
+
+2. **Harmonize to canonical schema (Python)** - one script per cohort. Each reads
+   intermediate master CSVs from `data/processed/` (e.g.
+   `genie_bpc_v1_sample_master_full.csv`, `genie_bpc_v1_mutations.csv`) - which are produced
+   upstream (partly in R / `gnomeR`) and are **not** generated by any script visible in this
+   repo - and writes the harmonized analytic frame plus a top-genes list and a recoding
+   dictionary.
+   ```zsh
+   python "src/data collection and processing/harmonize_genie.py"
+   python "src/data collection and processing/harmonize_tcga.py"
+   python "src/data collection and processing/harmonize_breast_msk_2018.py"
+   ```
+   Outputs (written to `src/exploratory data analysis/`):
+   `extracted_variables_<cohort>_data.csv`, `_top_genes.txt`,
+   `_gene_prev_brain_met.csv`, `_dictionary.csv`.
+
+3. **Enrich (Python)** - `enrich_harmonized.py` rewrites the three
+   `extracted_variables_<cohort>_data.csv` frames in place, adding long-form alias columns,
+   competing-event time-to-event columns for Aim 2, and (GENIE only) regimen-derived
+   treatment flags read from `data/processed/genie_bpc_v1_regimens.csv`.
+   ```zsh
+   python "src/data collection and processing/enrich_harmonized.py"
+   ```
+   Note: `add_pathways_genie_bpc.R` is an **empty 0-byte stub** - pathway columns are added
+   elsewhere (the harmonize step / upstream masters), not by this file.
+
+4. **Make analytic frames discoverable to modeling.** Ensure the harmonized
+   `extracted_variables_<cohort>_data.csv` and `_top_genes.txt` files are present under
+   `data/processed/`, because `_lib.load_cohort()` / `load_top_genes()` read from there.
+
+5. **Aim 1 - association (Python).** Most scripts take `--cohort {genie,tcga,msk18,all}`.
+   ```zsh
+   python "src/exploratory data analysis/gene_prevtable_oncoprint_forest.py" --cohort genie
+   python "src/exploratory data analysis/aim1_top10_pq_table.py" --cohort genie
+   python "src/exploratory data analysis/univariate and multivariate regression df and tables.py" --cohort genie
+   ```
+   CSV tables are written under `src/modeling/<cohort>/aim1/`; rendered tables/figures under
+   `manuscript components/<cohort>/aim1/`.
+
+6. **Aim 2 / Aim 3 - survival (Python).**
+   ```zsh
+   python "src/modeling/proportional_hazard_afttest.py" --cohort genie   # Aim 2, no-CNS-at-dx cohort
+   python "src/modeling/aim3_os.py" --cohort genie                       # Aim 3, brain-mets-ever cohort
+   ```
+   Both use `_lib.prep_covariates` / `drop_low_variance` and a minimum-events guard, and
+   write to `src/modeling/<cohort>/aimN/` (CSVs) and `manuscript components/<cohort>/aimN/`
+   (figures).
+
+7. **ML survival benchmark (Python + R).** The `xgb_aft_*.py` scripts and
+   `stratifiedKM_CoxFG_feature_prep_AFT.py` implement the XGBoost-AFT model, feature
+   importance, and SHAP; `shap analysis and plot generation.R` reproduces SHAP plots via
+   `SHAPforxgboost`. See `src/modeling/README_survival_AFT_pipeline.md`, but note that that
+   document describes a somewhat different, standalone CLI (a `survival_and_xgb_analysis.py`
+   file, a `requirements.txt`, and column names such as `DFS_MONTHS`/`SUBTYPE`/`G__*`) that
+   does not match the current repo layout or the canonical schema - **verify before use.**
+
+There is no automated test suite. Validate changes by re-running the relevant stage and
+sanity-checking the printed diagnostics and output tables/figures.
+
+## Auxiliary content (not part of the analytic pipeline)
+
+The top-level `self-documenting-ai-agent/`, `claude-md-memory-workflow/`,
+`context-engineering-workflow.md`, `plan-template.md`, and the `.claude/` Azure skill files
+are AI-engineering workflow scaffolding kept alongside the research code. They are unrelated
+to the brain-metastasis analysis and look out of place in a research repo.
