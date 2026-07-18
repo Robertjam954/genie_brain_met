@@ -5,7 +5,7 @@ format the portfolio tracking dashboard reads. Check a box (`[ ]` -> `[x]`) as
 you finish.
 
 > Project: **GENIE BPC BrCa Brain-Metastasis Analysis** · Stage: **data / modeling**
-> Cohorts: GENIE BPC (primary), TCGA-BRCA + MSK-IMPACT 2018 (replication).
+> Cohort: GENIE BPC BRCA.
 
 ## 1. Scoping
 - [x] Aims written with per-aim cohort restriction (see README §1)
@@ -15,15 +15,14 @@ you finish.
 - [ ] Run the ETL: harmonize scripts never executed; `data/processed/` empty (all Aims depend on it)
 - [ ] Implement `src/data collection and processing/add_pathways_genie_bpc.R` (currently a 0-byte stub)
 - [x] Raw GENIE BPC release landed in `data/raw/` (git-ignored)
-- [ ] Missingness audit finalized across the three cohorts
+- [ ] Missingness audit finalized on the GENIE BPC analytic frame
 
 ## 3. Exploratory data analysis
 - [x] Aim 1 gene-prevalence tables + oncoprint/forest (GENIE)
-- [ ] Descriptive/EDA parity for TCGA + MSK cohorts
 
 ## 4. Modeling
-- [ ] Generate missing outputs: Aim 1 for TCGA+MSK, and all Aim 2 & 3 survival / XGBoost-AFT results
-- [ ] Validation across replication cohorts
+- [ ] Generate missing outputs: all Aim 2 & 3 survival / XGBoost-AFT result tables
+- [ ] Sensitivity checks on the fitted survival / ML models
 
 ## 5. Reporting & repo hygiene
 - [ ] Add requirements.txt / environment.yml with pinned versions

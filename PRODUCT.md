@@ -8,16 +8,18 @@
 ## What this project is
 
 A research analytics pipeline investigating the genomic and clinical drivers of
-**breast-cancer brain metastasis**. It harmonizes three public clinical-genomic cancer
-cohorts - GENIE BPC BRCA, TCGA, and Breast MSK 2018 - into a single comparable analytic
-schema and runs a consistent set of statistical and machine-learning analyses across all
-of them. The end product is a set of reproducible tables and figures that feed a scientific
-manuscript on which gene mutations, oncogenic pathways, and clinical features are associated
-with developing brain metastases and with survival once they occur.
+**breast-cancer brain metastasis** in the **GENIE BPC BRCA** cohort. Genes and clinical risk
+factors shape both the likelihood and the timing of brain metastasis, and some carry far more
+weight than others; this project quantifies that variable impact by pairing classical
+association and survival statistics with nonlinear time-to-event models and modern machine
+learning (XGBoost with an Accelerated Failure Time objective). The end product is a set of
+reproducible tables and figures that feed a scientific manuscript on which gene mutations,
+oncogenic pathways, and clinical features are associated with developing brain metastases and
+with survival once they occur.
 
 ## What it does
 
-The work is organized around three analytic aims, each runnable per cohort:
+The work is organized around three analytic aims:
 
 ### Aim 1 - Association with brain metastasis
 - Compares prevalence of the top mutated genes and Sanchez-Vega oncogenic pathways between
@@ -46,31 +48,31 @@ The work is organized around three analytic aims, each runnable per cohort:
 
 ## Key features
 
-- **Cross-cohort harmonization.** A documented canonical schema (`harmonization_spec.md`)
-  defines one row per sample with standardized clinical recodings (race, ethnicity, grade,
-  stage, receptor subtype), organ-specific metastasis flags, and OS / PFS / time-to-brain-met
-  endpoints, so the same analysis runs identically on GENIE, TCGA, and MSK 2018.
+- **Documented analytic schema.** A written spec (`harmonization_spec.md`) defines one row
+  per sample with standardized clinical recodings (race, ethnicity, grade, stage, receptor
+  subtype), organ-specific metastasis flags, and OS / PFS / time-to-brain-met endpoints,
+  giving every downstream analysis a single, well-defined GENIE BPC frame to read.
 - **Mutation and pathway feature engineering.** Per-sample mutation summaries derived from
   MAF files (non-silent filtering, mutation counts, top-gene indicators) plus Sanchez-Vega
   oncogenic pathway flags.
 - **Classical and ML survival analysis side by side.** Cox PH (with assumption diagnostics),
   AFT, and XGBoost-AFT, allowing comparison of interpretable and predictive approaches.
 - **Manuscript-oriented outputs.** Analyses emit CSV result tables (Aim scripts write to
-  `src/modeling/<cohort>/aimN/`; a GENIE Aim 1 subset is committed under `src/data reports/`)
+  `src/modeling/genie/aimN/`; a GENIE Aim 1 subset is committed under `src/data reports/`)
   and publication figures/PDFs (`manuscript components/`, `reports/figures/`). Output
   coverage in the repo is currently partial - primarily GENIE Aim 1 tables plus rendered
-  figures - so not every aim/cohort listed above has committed result files.
-- **Centralized configuration.** Cohort definitions, gene lists, and covariate handling are
-  centralized in shared code (`src/modeling/_lib.py`) and driven by cohort keys, so the same
-  analysis runs across cohorts. Note the repo does not yet pin a Python/R environment
+  figures - so not every aim listed above has committed result files.
+- **Centralized configuration.** The cohort definition, gene lists, and covariate handling
+  are centralized in shared code (`src/modeling/_lib.py`), so every aim reads the same frame
+  the same way. Note the repo does not yet pin a Python/R environment
   (no `requirements.txt` / `environment.yml` / `renv.lock`), which is a reproducibility gap.
 
 ## Intended users and use cases
 
 - **Cancer genomics / translational researchers** examining biomarkers of brain metastasis
   in breast cancer.
-- **Biostatisticians and computational biologists** who need a harmonized, multi-cohort
-  framework for survival and association analyses.
+- **Biostatisticians and computational biologists** who need a worked framework for survival
+  and association analyses on genomic cohort data.
 - **Manuscript authors** producing the tables and figures for a brain-metastasis publication.
 
 This is a research codebase, not a clinical or production decision-support tool. It operates

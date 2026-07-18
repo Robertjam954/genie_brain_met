@@ -120,7 +120,7 @@
   <div class="hero">
     <div class="kicker">Results dashboard</div>
     <h1>Genomic &amp; survival drivers of breast-cancer brain metastasis</h1>
-    <p class="sub">Every figure from the harmonized GENIE BPC BRCA analysis — association, time-to-event, overall survival, and the machine-learning survival benchmark — in one browsable place. Click any figure to enlarge.</p>
+    <p class="sub">Every figure from the GENIE BPC BRCA analysis — association, time-to-event, overall survival, and the machine-learning survival benchmark — in one browsable place. Click any figure to enlarge.</p>
     <div class="meta">
       <span><b>Cohort</b> GENIE BPC v1.0 BRCA</span>
       <span><b>Samples</b> 1,234 / 1,130 patients</span>
@@ -147,7 +147,7 @@
     <section id="overview">
       <div class="ey">01 — Overview</div>
       <h2>Cohort &amp; study design</h2>
-      <p class="lead">One row per sequenced sample, harmonized to a canonical schema. Three analytic aims plus a machine-learning survival benchmark run off the same frame, keyed on brain-metastasis status and time-to-event endpoints.</p>
+      <p class="lead">One row per sequenced sample in a single prepared analytic frame. Three analytic aims plus a machine-learning survival benchmark run off the same frame, keyed on brain-metastasis status and time-to-event endpoints.</p>
       <div class="cards">
         <div class="c"><div class="h">Full frame</div><div class="v">1,234</div><div class="d">samples · 1,130 patients</div></div>
         <div class="c"><div class="h">Brain-mets ever</div><div class="v">393</div><div class="d">Aim 1 &amp; Aim 3 cohort · 362 patients</div></div>
@@ -198,7 +198,7 @@
     <section id="methods">
       <div class="ey">06 — Methods &amp; provenance</div>
       <h2>Methods by aim</h2>
-      <p class="lead">Three public clinical-genomic cohorts — GENIE BPC BRCA, TCGA, and Breast MSK 2018 — harmonized to a single canonical schema and run through a consistent statistical and machine-learning stack.</p>
+      <p class="lead">The public GENIE BPC BRCA cohort, prepared into a single analytic frame and run through a consistent statistical and machine-learning stack - classical association and survival statistics alongside nonlinear time-to-event models and XGBoost-AFT.</p>
       <div style="overflow-x:auto">
       <table class="spec">
         <tr><th>Aim</th><th>Question</th><th>Methods</th></tr>
@@ -210,7 +210,7 @@
       </div>
       <h3>Data &amp; provenance</h3>
       <ul class="clean">
-        <li>Raw and derived data (cBioPortal / GENIE exports, harmonized analytic CSVs) are <strong>not tracked in version control</strong> — the pipeline reads them from a local <code>data/processed/</code> root.</li>
+        <li>Raw and derived data (cBioPortal / GENIE exports, prepared analytic CSVs) are <strong>not tracked in version control</strong> — the pipeline reads them from a local <code>data/processed/</code> root.</li>
         <li>Operates on <strong>de-identified public datasets</strong> for research and manuscript preparation; it is <strong>not a clinical tool</strong>.</li>
         <li>Figures shown here are viewer-optimized (downscaled, palette-quantized) for fast browsing; the manuscript PDFs/PNGs remain the source of truth.</li>
       </ul>

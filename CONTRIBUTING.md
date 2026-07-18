@@ -22,15 +22,15 @@ install.packages(c("dplyr", "readr", "tidyr", "purrr", "stringr", "data.table",
 ```
 
 ### Data
-Raw GENIE / TCGA / MSK cBioPortal exports are not in the repo (and are git-ignored). The R
+Raw GENIE BPC cBioPortal exports are not in the repo (and are git-ignored). The R
 pull scripts and the notebooks reference local, machine-specific absolute paths - you must
 adjust these. The harmonize scripts read intermediate master CSVs from `data/processed/`
 (produced upstream, partly in R / `gnomeR`, and not scripted in this repo) and **write** the
-canonical analytic frames (`extracted_variables_<cohort>_data.csv`,
-`extracted_variables_<cohort>_top_genes.txt`, etc.) into `src/exploratory data analysis/`.
+canonical analytic frames (`extracted_variables_genie_data.csv`,
+`extracted_variables_genie_top_genes.txt`, etc.) into `src/exploratory data analysis/`.
 However, `_lib.load_cohort()` / `load_top_genes()` **read** those frames from
 `data/processed/`. Because those locations differ - and `data/processed/` is not present in
-the repo - you must ensure the harmonized frames are placed under `data/processed/` before
+the repo - you must ensure the prepared frames are placed under `data/processed/` before
 running any Aim analysis. Never commit raw or identifiable patient data; use the
 de-identification script and keep private data outside the tracked tree.
 
@@ -44,15 +44,15 @@ contribution.
 The pipeline is run stage by stage:
 1. Pull / extract (R): `Rscript "src/data collection and processing/pull_genie_data.R"`
    (emits `data/extracted_variables_of_interest.xlsx`).
-2. Harmonize (Python): run the per-cohort `harmonize_*.py` scripts. Pathway and gene-binary
-   columns are attached during harmonization / in the upstream masters - **not** by
+2. Build the analytic frame (Python): run `harmonize_genie.py`. Pathway and gene-binary
+   columns are attached during data prep / in the upstream masters - **not** by
    `add_pathways_genie_bpc.R`, which is an empty 0-byte stub.
 3. Enrich (Python): `enrich_harmonized.py` (adds alias, competing-event, and GENIE regimen
    columns; rewrites the cohort CSVs in place).
 4. Stage the analytic frames under `data/processed/` so `_lib` can find them.
-5. Analyze (Python): run the Aim 1/2/3 scripts; most take a `--cohort {genie,tcga,msk18,all}`
-   argument and write CSVs to `src/modeling/<cohort>/aimN/` and figures to
-   `manuscript components/<cohort>/aimN/`.
+5. Analyze (Python): run the Aim 1/2/3 scripts; they take a `--cohort genie`
+   argument and write CSVs to `src/modeling/genie/aimN/` and figures to
+   `manuscript components/genie/aimN/`.
 
 The survival + XGBoost documentation in `src/modeling/README_survival_AFT_pipeline.md`
 describes a standalone `survival_and_xgb_analysis.py` CLI (`--xlsx`, `--time-col`,
