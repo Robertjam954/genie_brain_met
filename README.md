@@ -46,23 +46,27 @@ architecture overview, [`CONTRIBUTING.md`](CONTRIBUTING.md) for developer conven
 
 ## Prerequisites and setup
 
-There is **no pinned environment file in the repo** (no `requirements.txt`,
-`environment.yml`, or `renv.lock`). This is a known gap - set up the environment manually,
-and consider adding a pinned spec.
+The Python survival + ML stack is pinned in [`requirements.txt`](requirements.txt) (pip) and
+[`environment.yml`](environment.yml) (conda), a coherent Python 3.9-3.11 constellation. There
+is no R `renv.lock` yet; the R packages below are still installed manually.
 
 ### Python
 
 ```zsh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install pandas numpy scipy scikit-learn statsmodels lifelines xgboost \
-            matplotlib seaborn openpyxl shap
-# Some scripts/notebooks additionally reference: lightgbm, optuna, scikit-survival (sksurv)
+# pip
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# or conda / mamba (env name matches the notebook kernel `genie-brainmet`)
+conda env create -f environment.yml && conda activate genie-brainmet
 ```
 
-Python 3.9+ is recommended (`_lib.py` uses `from __future__ import annotations` and modern
-type hints). XGBoost must be >= 1.6 for the AFT objective. Not every environment on the
-author's machine currently has the full survival stack installed
+`requirements.txt` covers everything the scripts and notebooks import: pandas, numpy,
+scipy, scikit-learn, statsmodels, lifelines, scikit-survival, xgboost, lightgbm, optuna,
+shap, matplotlib, seaborn, and openpyxl. Python 3.9+ is required (`_lib.py` uses
+`from __future__ import annotations` and modern type hints); XGBoost is pinned >= 1.6 for
+the AFT objective. If you are extending the author's existing `tcga-analysis` conda env
+rather than building a fresh venv, reconcile the pins against that env first
 (see `docs/plans/finish-project-run-notebooks-plan.md`).
 
 ### R
@@ -126,8 +130,12 @@ use absolute, machine-specific paths internally and will need editing.
    ```zsh
    python "src/data collection and processing/enrich_harmonized.py"
    ```
-   Note: `add_pathways_genie_bpc.R` is an **empty 0-byte stub** - pathway columns are added
-   elsewhere (the data-prep step / upstream masters), not by this file.
+   Note: `add_pathways_genie_bpc.R` is the upstream R step that builds the gene-binary
+   matrix and the 10 Sanchez-Vega `pathway_*` columns (via gnomeR, per
+   `harmonization_spec.md` sections 13-14) and writes
+   `data/processed/genie_bpc_v1_sample_master_full.csv` - the clinical + gene_binary +
+   pathways master that `harmonize_genie.py` reads. Run it before Stage 2 if that master
+   does not already carry pathway columns.
 
 4. **Make the analytic frame discoverable to modeling.** Ensure the prepared
    `extracted_variables_genie_data.csv` and `_top_genes.txt` files are present under
@@ -151,13 +159,13 @@ use absolute, machine-specific paths internally and will need editing.
    write to `src/modeling/genie/aimN/` (CSVs) and `manuscript components/genie/aimN/`
    (figures).
 
-7. **ML survival benchmark (Python + R).** The `xgb_aft_*.py` scripts and
-   `stratifiedKM_CoxFG_feature_prep_AFT.py` implement the XGBoost-AFT model, feature
-   importance, and SHAP; `shap analysis and plot generation.R` reproduces SHAP plots via
-   `SHAPforxgboost`. See `src/modeling/README_survival_AFT_pipeline.md`, but note that that
-   document describes a somewhat different, standalone CLI (a `survival_and_xgb_analysis.py`
-   file, a `requirements.txt`, and column names such as `DFS_MONTHS`/`SUBTYPE`/`G__*`) that
-   does not match the current repo layout or the canonical schema - **verify before use.**
+7. **ML survival benchmark (Python + R).** The XGBoost-AFT trainer
+   (`xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py`) and its SHAP
+   explainer (`xgb_aft_shap_feature_importance.py`) are `_lib`-based and take
+   `--cohort`/`--aim`; `shap analysis and plot generation.R` reproduces SHAP plots via
+   `SHAPforxgboost`. `stratifiedKM_CoxFG_feature_prep_AFT.py` is an older standalone driver
+   still on the legacy schema. See `src/modeling/README_survival_AFT_pipeline.md` for the
+   full breakdown of what is ported vs legacy.
 
 There is no automated test suite. Validate changes by re-running the relevant stage and
 sanity-checking the printed diagnostics and output tables/figures.

@@ -1,124 +1,101 @@
-# Survival and ML Analysis Pipeline
+# Survival and ML modeling scripts (`src/modeling/`)
 
-This pipeline performs survival analysis and an AFT-based machine learning model on the merged GENIE dataset.
+This directory holds two related-but-distinct families of survival code. Know which one
+you are running.
 
-## What it does
+> **History note.** An earlier version of this README described a single standalone
+> `survival_and_xgb_analysis.py` CLI driven by a `merged_genie.xlsx` workbook with
+> `DFS_MONTHS`/`DFS_STATUS`/`SUBTYPE`/`MANTIS_BIN`/`G__*` columns. That file name and that
+> schema are **not** what the repo currently contains. This page has been reconciled to the
+> scripts that actually exist; the older column contract survives only inside the
+> standalone benchmark scripts noted below and does not match the canonical analytic frame.
 
-- Kaplan–Meier curves overall and stratified by SUBTYPE and MANTIS_BIN
-- Univariate Cox PH for gene indicators (`G__*`) and baseline covariates
-- Multivariate Cox PH with PH diagnostics (Schoenfeld tests)
-- Fine–Gray competing-risk model (if a competing event column exists)
-- XGBoost Accelerated Failure Time (AFT) model with feature importance
+---
 
-## Inputs
+## A. Canonical Aim 2 / Aim 3 survival (the current pipeline)
 
-- `datasets_analysis_dictionary/merged_genie.xlsx` (Excel; contains time-to-event and event columns)
-- Optional: `output/fine_gray_python/per_gene_cs_cox_sksurv_bootstrap.csv` (provides top-N genes)
+These are the scripts the [Pipeline Run Guide](../../wiki/Pipeline-Run-Guide.md) drives.
+They share the `_lib.py` backbone, take `--cohort {genie,tcga,msk18}`, read the canonical
+`data/processed/extracted_variables_<cohort>_data.csv` frame via `_lib.load_cohort()`, and
+use the canonical schema (`OS_months`, `os_status_bin`, `tt_brain_met_mos`,
+`brain_met_event`, `top5_any_mutated`, `receptor_primary_cat`, bare-HUGO gene columns).
 
-## Outputs
+| Script | Aim | Cohort filter | Endpoint |
+|---|---|---|---|
+| `proportional_hazard_afttest.py` | Aim 2 - time to brain met | `brain_met_at_dx == 0` | `tt_brain_met_mos` / `brain_met_event` |
+| `aim3_os.py` | Aim 3 - overall survival | `any_brain_met == 1` | `OS_months` / `os_status_bin` |
 
-Written under `output/survival/`:
-- `km/` — PNG plots of Kaplan–Meier curves
-- `cox/` — `cox_univariate.csv`, `cox_multivariate_summary.csv`, and stratified results
-- `finegray/` — `finegray_summary.csv` (if applicable)
-- `xgb/` — `xgb_aft_model.json`, `xgb_feature_importance.csv`, `xgb_aft_metrics.json`
-- `logs/` — Cox PH diagnostics text files
-- `run_summary.json` — overview of detected columns and steps performed
-
-## Install dependencies (macOS, zsh)
-
-```zsh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-## Run
+Each does: KM stratified by `top5_any_mutated` + log-rank; Cox PH with `_lib.prep_covariates`
+/ `drop_low_variance` covariates and scaled Schoenfeld PH diagnostics; AFT distribution
+selection (Weibull / lognormal / log-logistic by AIC) then a full AFT fit. Both enforce
+`MIN_EVENTS = 25` before fitting Cox / AFT.
 
 ```zsh
-# Basic run (auto-detect time/event columns)
-python survival_and_xgb_analysis.py \
-  --xlsx datasets_analysis_dictionary/merged_genie.xlsx
-
-# Explicit columns (example)
-python survival_and_xgb_analysis.py \
-  --xlsx datasets_analysis_dictionary/merged_genie.xlsx \
-  --time-col DFS_MONTHS \
-  --event-col DFS_STATUS \
-  --competing-col OS_STATUS \
-  --strata SUBTYPE,MANTIS_BIN \
-  --topn-genes 10
+python proportional_hazard_afttest.py --cohort genie
+python aim3_os.py --cohort genie          # repeat with --cohort tcga / msk18
 ```
 
-## Column expectations
+Outputs: CSV tables under `src/modeling/<cohort>/aim{2,3}/`; figures under
+`manuscript components/<cohort>/aim{2,3}/`.
 
-- Time-to-event: tries `DFS_MONTHS`, `DFS_TIME`, `TIME_TO_DFS`, `TIME_TO_EVENT`, `MONTHS_TO_DFS`, `PFS_MONTHS`, `OS_MONTHS` (case-insensitive)
-- Event indicator (1=event, 0=censored): tries `DFS_STATUS`, `DFS_EVENT`, `EVENT`, `PFS_EVENT`, `OS_EVENT`, `OS_STATUS`
-- Competing event for Fine–Gray (optional): tries `DEATH_EVENT`, `OS_STATUS`, `DECEASED`, `COMPETING_EVENT`
-- Gene indicators: columns that start with `G__`; if missing, script will derive them from a HUGO-like column using the top genes CSV
+---
 
-## Notes
+## B. XGBoost-AFT ML benchmark
 
-- Fine–Gray uses `lifelines.FineAndGrayFitter`; if lifelines is not installed with this class, the step will be skipped.
-- XGBoost AFT requires xgboost>=1.6; labels are encoded as (lower, upper) bounds with +inf for right-censored observations.
-- For Cox PH, we include baseline covariates and select up to 10 genes with p<0.1 from the univariate screen.
+The machine-learning survival benchmark (Stage 8 of the run guide). The XGB-AFT trainer
+and its SHAP explainer have been **ported onto the canonical `_lib` schema** (`--cohort` /
+`--aim`, `load_cohort()`, canonical endpoints and covariates), so they share the feature
+definition and run on the same `extracted_variables_<cohort>_data.csv` frame as Aim 2/3.
+The combined KM/Cox/Fine-Gray driver is still on the legacy contract (see "Known gaps").
 
-## SHAP explainability (R)
+| Script | Role |
+|---|---|
+| `xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py` | XGBoost-AFT train/validate/evaluate on the canonical frame. `--cohort {genie,tcga,msk18,all}` `--aim {aim3,aim2}`. Features = `prep_covariates` clinical block + top-10 bare-HUGO genes + `pathway_*` + genomic burden. Exposes `assemble_xy` / `ENDPOINTS` for reuse. |
+| `xgb_aft_shap_feature_importance.py` | SHAP-like contributions (`pred_contribs`) for the trained model; imports `assemble_xy` from the trainer so the explanation matrix matches training exactly. |
+| `stratifiedKM_CoxFG_feature_prep_AFT.py` | Legacy combined "survival + ML" driver (the script the old README called `survival_and_xgb_analysis.py`): KM, uni/multivariate Cox PH, Fine-Gray, XGB-AFT. Still reads `merged_genie.xlsx` and writes under `output/survival/`. |
+| `shap analysis and plot generation.R` | R SHAP plots via `SHAPforxgboost` (summary / dependence / force plots). |
 
-An R helper script is included to reproduce SHAP plots similar to your example.
-
-- Script: `shap_feature_explainer.R`
-- It installs SHAPforxgboost (CRAN first; falls back to GitHub if needed), trains a small demo model if no CSV is provided, and saves plots.
-
-Run (demo data):
+XGBoost-AFT label encoding: intervals `(lower, upper)` with `+inf` upper bound for
+right-censored rows; XGBoost must be `>= 1.6` for the `survival:aft` objective. The trainer
+enforces the same `MIN_EVENTS = 25` guard as Aim 2/3.
 
 ```zsh
-Rscript shap_feature_explainer.R --outdir output/shap
+python xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py --cohort genie --aim aim3
+python xgb_aft_shap_feature_importance.py --cohort genie --aim aim3
+Rscript "shap analysis and plot generation.R"
 ```
 
-Run (your CSV):
+Outputs: model JSON / metrics / feature-importance CSV under
+`src/modeling/<cohort>/ml_benchmark/`; figures under `reports/figures/ml_benchmark/`.
+
+---
+
+## Install
+
+Dependencies are pinned at the repo root, not here:
 
 ```zsh
-Rscript shap_feature_explainer.R \
-  --csv path/to/your/features.csv \
-  --outcome diffcwv \
-  --outdir output/shap
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r ../../requirements.txt     # or: conda env create -f ../../environment.yml
 ```
 
-Outputs:
-- `shap_ranked_features.csv`
-- `shap_summary.png`, `shap_summary_light.png`
-- `shap_dependence_<topfeat>.png` (+ colored variant when available)
-- `shap_interaction_<feat1>_<feat2>.png` (if computed)
-- `shap_force_plot.png`, `shap_force_plot_bygroup.png`
+`lifelines` provides the Cox/KM/AFT fitters and (where available) `FineAndGrayFitter`; if
+that class is absent in your lifelines version the Fine-Gray step is skipped with a message.
 
-## SHAP-like summary for XGB AFT (Python)
+---
 
-For the survival AFT model trained by `survival_and_xgb_analysis.py`, use `xgb_aft_shap_summary.py` to compute contribution matrices and a top-N bar plot.
+## Known gaps
 
-Run:
+Resolved:
+- **XGB-AFT trainer + SHAP ported** to `_lib.load_cohort()` and the canonical schema
+  (`--cohort`/`--aim`); the `path/to/cleaned_data.csv` placeholder is gone, and the two
+  scripts now share one feature definition.
+- **Duplicate SHAP script removed** (`xgb_aft_feature_.processing_feature_processing_feature_importance.py`).
 
-```zsh
-python xgb_aft_shap_summary.py \
-  --xlsx datasets_analysis_dictionary/merged_genie.xlsx \
-  --model-json output/survival/xgb/xgb_aft_model.json \
-  --per-gene-csv output/fine_gray_python/per_gene_cs_cox_sksurv_bootstrap.csv \
-  --topn-genes 10 \
-  --outdir output/survival/xgb
-```
-
-Outputs:
-- `output/survival/xgb/shap_contribs.csv` (N x (F+1), last is bias)
-- `output/survival/xgb/shap_feature_ranking.csv`
-- `output/survival/xgb/shap_topN_bar.png`
-
-## Troubleshooting installs
-
-If dependency installation failed earlier, ensure you install from the directory that contains `requirements.txt`:
-
-```zsh
-cd /Users/robertjames/Downloads/Transfer
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+Remaining:
+1. **Legacy driver not yet ported.** `stratifiedKM_CoxFG_feature_prep_AFT.py` still expects
+   `merged_genie.xlsx` and `DFS_*`/`SUBTYPE`/`MANTIS_BIN`/`G__*` columns. Its KM/Cox/Fine-Gray
+   pieces overlap the canonical Aim 2/3 scripts (family A); either port it onto
+   `_lib.load_cohort()` or retire it in favor of family A + the ported XGB-AFT benchmark.
+2. **Not yet executed on real data.** The ported scripts byte-compile but have not been run
+   against a cohort frame here; validate C-index / feature ranking on first real run.
