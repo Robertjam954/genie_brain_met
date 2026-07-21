@@ -127,8 +127,12 @@ use absolute, machine-specific paths internally and will need editing.
    ```zsh
    python "src/data collection and processing/enrich_harmonized.py"
    ```
-   Note: `add_pathways_genie_bpc.R` is an **empty 0-byte stub** - pathway columns are added
-   elsewhere (the data-prep step / upstream masters), not by this file.
+   Note: `add_pathways_genie_bpc.R` is the upstream R step that builds the gene-binary
+   matrix and the 10 Sanchez-Vega `pathway_*` columns (via gnomeR, per
+   `harmonization_spec.md` sections 13-14) and writes
+   `data/processed/genie_bpc_v1_sample_master_full.csv` - the clinical + gene_binary +
+   pathways master that `harmonize_genie.py` reads. Run it before Stage 2 if that master
+   does not already carry pathway columns.
 
 4. **Make the analytic frame discoverable to modeling.** Ensure the prepared
    `extracted_variables_genie_data.csv` and `_top_genes.txt` files are present under

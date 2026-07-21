@@ -72,8 +72,11 @@ python "src/data collection and processing/enrich_harmonized.py"
 
 **Outputs:** same files, rewritten in place.
 
-> `add_pathways_genie_bpc.R` is an **empty 0-byte stub** and does nothing. Pathway
-> columns are added during harmonization or in the upstream masters.
+> `add_pathways_genie_bpc.R` is the upstream R step that builds the GENIE gene-binary
+> matrix and the 10 Sanchez-Vega `pathway_*` columns (gnomeR; `harmonization_spec.md`
+> sections 13-14) and writes `data/processed/genie_bpc_v1_sample_master_full.csv`. Run it
+> before Stage 2 if that master does not already carry the `pathway_*` columns that
+> `harmonize_genie.py` expects.
 
 ---
 

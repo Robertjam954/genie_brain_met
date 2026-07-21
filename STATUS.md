@@ -13,7 +13,7 @@ you finish.
 
 ## 2. Data collection & processing
 - [ ] Run the ETL: harmonize scripts never executed; `data/processed/` empty (all Aims depend on it)
-- [ ] Implement `src/data collection and processing/add_pathways_genie_bpc.R` (currently a 0-byte stub)
+- [x] Implement `src/data collection and processing/add_pathways_genie_bpc.R` (gene-binary + Sanchez-Vega pathways via gnomeR; not yet run on real data)
 - [x] Raw GENIE BPC release landed in `data/raw/` (git-ignored)
 - [ ] Missingness audit finalized on the GENIE BPC analytic frame
 
