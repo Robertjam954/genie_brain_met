@@ -40,33 +40,33 @@ Outputs: CSV tables under `src/modeling/<cohort>/aim{2,3}/`; figures under
 
 ---
 
-## B. Standalone XGBoost-AFT ML benchmark
+## B. XGBoost-AFT ML benchmark
 
-These implement the machine-learning survival benchmark (Stage 8 of the run guide). They
-are older, standalone scripts that do **not** yet use `_lib` or the canonical schema - they
-still reference the legacy `merged_genie.xlsx` / `DFS_*` / `SUBTYPE` / `MANTIS_BIN` / `G__*`
-contract and, in one case, a placeholder input path. Treat them as a reference
-implementation to port onto the canonical frame; see "Known gaps" below.
+The machine-learning survival benchmark (Stage 8 of the run guide). The XGB-AFT trainer
+and its SHAP explainer have been **ported onto the canonical `_lib` schema** (`--cohort` /
+`--aim`, `load_cohort()`, canonical endpoints and covariates), so they share the feature
+definition and run on the same `extracted_variables_<cohort>_data.csv` frame as Aim 2/3.
+The combined KM/Cox/Fine-Gray driver is still on the legacy contract (see "Known gaps").
 
 | Script | Role |
 |---|---|
-| `stratifiedKM_CoxFG_feature_prep_AFT.py` | The combined "survival + ML" driver (the script the old README called `survival_and_xgb_analysis.py`): KM, uni/multivariate Cox PH, Fine-Gray competing risks, and the XGBoost-AFT fit. Reads `merged_genie.xlsx`; writes under `output/survival/`. |
-| `xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py` | Standalone feature construction + XGBoost-AFT train/validate/evaluate (concordance index). Input path is a `path/to/cleaned_data.csv` placeholder that must be set. |
-| `xgb_aft_shap_feature_importance.py` | SHAP-like feature contributions for a trained XGB-AFT model (`pred_contribs`); writes `shap_contribs.csv`, `shap_feature_ranking.csv`, `shap_topN_bar.png`. |
-| `xgb_aft_feature_.processing_feature_processing_feature_importance.py` | Near-duplicate of the SHAP script above (same docstring/outputs); consolidate the two. |
+| `xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py` | XGBoost-AFT train/validate/evaluate on the canonical frame. `--cohort {genie,tcga,msk18,all}` `--aim {aim3,aim2}`. Features = `prep_covariates` clinical block + top-10 bare-HUGO genes + `pathway_*` + genomic burden. Exposes `assemble_xy` / `ENDPOINTS` for reuse. |
+| `xgb_aft_shap_feature_importance.py` | SHAP-like contributions (`pred_contribs`) for the trained model; imports `assemble_xy` from the trainer so the explanation matrix matches training exactly. |
+| `stratifiedKM_CoxFG_feature_prep_AFT.py` | Legacy combined "survival + ML" driver (the script the old README called `survival_and_xgb_analysis.py`): KM, uni/multivariate Cox PH, Fine-Gray, XGB-AFT. Still reads `merged_genie.xlsx` and writes under `output/survival/`. |
 | `shap analysis and plot generation.R` | R SHAP plots via `SHAPforxgboost` (summary / dependence / force plots). |
 
 XGBoost-AFT label encoding: intervals `(lower, upper)` with `+inf` upper bound for
-right-censored rows; XGBoost must be `>= 1.6` for the `survival:aft` objective.
+right-censored rows; XGBoost must be `>= 1.6` for the `survival:aft` objective. The trainer
+enforces the same `MIN_EVENTS = 25` guard as Aim 2/3.
 
 ```zsh
-python stratifiedKM_CoxFG_feature_prep_AFT.py            # combined survival + XGB-AFT
-python xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py
-python xgb_aft_shap_feature_importance.py
+python xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py --cohort genie --aim aim3
+python xgb_aft_shap_feature_importance.py --cohort genie --aim aim3
 Rscript "shap analysis and plot generation.R"
 ```
 
-Outputs: `reports/figures/ml_benchmark/` (and, for the standalone driver, `output/survival/`).
+Outputs: model JSON / metrics / feature-importance CSV under
+`src/modeling/<cohort>/ml_benchmark/`; figures under `reports/figures/ml_benchmark/`.
 
 ---
 
@@ -84,16 +84,18 @@ that class is absent in your lifelines version the Fine-Gray step is skipped wit
 
 ---
 
-## Known gaps (to reconcile before relying on family B)
+## Known gaps
 
-1. **Schema mismatch.** The family-B scripts expect `merged_genie.xlsx` and
-   `DFS_*`/`SUBTYPE`/`MANTIS_BIN`/`G__*` columns. The canonical frame is
-   `extracted_variables_<cohort>_data.csv` with `OS_months`/`os_status_bin`/
-   `tt_brain_met_mos`/`brain_met_event`, `receptor_primary_cat`, bare-HUGO gene columns,
-   and `pathway_*` indicators. Port family B onto `_lib.load_cohort()` + the canonical
-   columns so it runs on current data.
-2. **Placeholder input.** `xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py`
-   opens `path/to/cleaned_data.csv` - wire it to `_lib.load_cohort()` (or a real path).
-3. **Duplicate SHAP scripts.** `xgb_aft_shap_feature_importance.py` and
-   `xgb_aft_feature_.processing_feature_processing_feature_importance.py` are near-identical;
-   keep one.
+Resolved:
+- **XGB-AFT trainer + SHAP ported** to `_lib.load_cohort()` and the canonical schema
+  (`--cohort`/`--aim`); the `path/to/cleaned_data.csv` placeholder is gone, and the two
+  scripts now share one feature definition.
+- **Duplicate SHAP script removed** (`xgb_aft_feature_.processing_feature_processing_feature_importance.py`).
+
+Remaining:
+1. **Legacy driver not yet ported.** `stratifiedKM_CoxFG_feature_prep_AFT.py` still expects
+   `merged_genie.xlsx` and `DFS_*`/`SUBTYPE`/`MANTIS_BIN`/`G__*` columns. Its KM/Cox/Fine-Gray
+   pieces overlap the canonical Aim 2/3 scripts (family A); either port it onto
+   `_lib.load_cohort()` or retire it in favor of family A + the ported XGB-AFT benchmark.
+2. **Not yet executed on real data.** The ported scripts byte-compile but have not been run
+   against a cohort frame here; validate C-index / feature ranking on first real run.

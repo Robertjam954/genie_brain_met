@@ -156,27 +156,27 @@ Same KM / Cox PH / AFT machinery as Aim 2.
 
 ## Stage 8 - ML survival benchmark (Python + R)
 
-XGBoost-AFT survival model, concordance-index evaluation, SHAP feature importance.
+XGBoost-AFT survival model, concordance-index evaluation, SHAP feature importance. The
+trainer and its SHAP explainer are `_lib`-based and take `--cohort {genie,tcga,msk18,all}`
+and `--aim {aim3,aim2}` (default `aim3` = overall survival). Run the trainer before SHAP.
 
 ```zsh
-# Feature construction, training, and evaluation
-python "src/modeling/xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py"
+# Train + validate + evaluate (writes model JSON, metrics, feature-importance CSV)
+python "src/modeling/xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py" --cohort genie --aim aim3
 
-# Feature importance
-python "src/modeling/xgb_aft_feature_.processing_feature_processing_feature_importance.py"
-
-# SHAP analysis (Python)
-python "src/modeling/xgb_aft_shap_feature_importance.py"
+# SHAP-like contributions for the trained model (reuses the trainer's feature definition)
+python "src/modeling/xgb_aft_shap_feature_importance.py" --cohort genie --aim aim3
 
 # SHAP plots (R)
 Rscript "src/modeling/shap analysis and plot generation.R"
 ```
 
-**Outputs:** `reports/figures/ml_benchmark/`
+**Outputs:** model JSON / metrics / feature-importance CSV under
+`src/modeling/<cohort>/ml_benchmark/`; figures under `reports/figures/ml_benchmark/`.
 
-> The `src/modeling/README_survival_AFT_pipeline.md` describes a standalone
-> `survival_and_xgb_analysis.py` CLI that does **not** match the current `_lib`-based
-> layout. Treat it as a reference for an older variant; reconcile before relying on it.
+> `stratifiedKM_CoxFG_feature_prep_AFT.py` is the older standalone KM/Cox/Fine-Gray + XGB-AFT
+> driver still on the legacy `merged_genie.xlsx` schema; see
+> `src/modeling/README_survival_AFT_pipeline.md` for what has been ported and what remains.
 
 ---
 

@@ -159,13 +159,13 @@ use absolute, machine-specific paths internally and will need editing.
    write to `src/modeling/genie/aimN/` (CSVs) and `manuscript components/genie/aimN/`
    (figures).
 
-7. **ML survival benchmark (Python + R).** The `xgb_aft_*.py` scripts and
-   `stratifiedKM_CoxFG_feature_prep_AFT.py` implement the XGBoost-AFT model, feature
-   importance, and SHAP; `shap analysis and plot generation.R` reproduces SHAP plots via
-   `SHAPforxgboost`. See `src/modeling/README_survival_AFT_pipeline.md`, but note that that
-   document describes a somewhat different, standalone CLI (a `survival_and_xgb_analysis.py`
-   file, a `requirements.txt`, and column names such as `DFS_MONTHS`/`SUBTYPE`/`G__*`) that
-   does not match the current repo layout or the canonical schema - **verify before use.**
+7. **ML survival benchmark (Python + R).** The XGBoost-AFT trainer
+   (`xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py`) and its SHAP
+   explainer (`xgb_aft_shap_feature_importance.py`) are `_lib`-based and take
+   `--cohort`/`--aim`; `shap analysis and plot generation.R` reproduces SHAP plots via
+   `SHAPforxgboost`. `stratifiedKM_CoxFG_feature_prep_AFT.py` is an older standalone driver
+   still on the legacy schema. See `src/modeling/README_survival_AFT_pipeline.md` for the
+   full breakdown of what is ported vs legacy.
 
 There is no automated test suite. Validate changes by re-running the relevant stage and
 sanity-checking the printed diagnostics and output tables/figures.
