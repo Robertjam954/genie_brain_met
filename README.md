@@ -46,23 +46,24 @@ architecture overview, [`CONTRIBUTING.md`](CONTRIBUTING.md) for developer conven
 
 ## Prerequisites and setup
 
-There is **no pinned environment file in the repo** (no `requirements.txt`,
-`environment.yml`, or `renv.lock`). This is a known gap - set up the environment manually,
-and consider adding a pinned spec.
+The Python survival + ML stack is pinned in [`requirements.txt`](requirements.txt) (a
+coherent Python 3.9-3.11 constellation). There is no `environment.yml` or `renv.lock`
+yet; the R packages below are still installed manually.
 
 ### Python
 
 ```zsh
 python3 -m venv .venv
 source .venv/bin/activate
-pip install pandas numpy scipy scikit-learn statsmodels lifelines xgboost \
-            matplotlib seaborn openpyxl shap
-# Some scripts/notebooks additionally reference: lightgbm, optuna, scikit-survival (sksurv)
+pip install -r requirements.txt
 ```
 
-Python 3.9+ is recommended (`_lib.py` uses `from __future__ import annotations` and modern
-type hints). XGBoost must be >= 1.6 for the AFT objective. Not every environment on the
-author's machine currently has the full survival stack installed
+`requirements.txt` covers everything the scripts and notebooks import: pandas, numpy,
+scipy, scikit-learn, statsmodels, lifelines, scikit-survival, xgboost, lightgbm, optuna,
+shap, matplotlib, seaborn, and openpyxl. Python 3.9+ is required (`_lib.py` uses
+`from __future__ import annotations` and modern type hints); XGBoost is pinned >= 1.6 for
+the AFT objective. If you are extending the author's existing `tcga-analysis` conda env
+rather than building a fresh venv, reconcile the pins against that env first
 (see `docs/plans/finish-project-run-notebooks-plan.md`).
 
 ### R

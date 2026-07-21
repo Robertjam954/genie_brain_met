@@ -1,0 +1,40 @@
+# Python dependencies for the GENIE BPC BRCA brain-metastasis analysis.
+#
+# Scope: the survival + ML stack imported across src/**/*.py and notebooks/*.ipynb
+# (Aim 1 association, Aim 2/3 survival, and the XGBoost-AFT ML benchmark).
+# Standard-library modules (argparse, pathlib, json, io, re, math, contextlib,
+# dataclasses, warnings, ...) are intentionally omitted. Local modules `_lib` and
+# `col_normalize` live in the repo and are not installed from PyPI.
+#
+# Targets Python 3.9-3.11. This is a coherent, mutually compatible constellation
+# (numpy pinned <2 so scikit-survival / shap / xgboost resolve cleanly, and
+# scikit-learn pinned to the 1.4 line that scikit-survival 0.22.x supports).
+# If you are extending the existing `tcga-analysis` conda env rather than building
+# a fresh venv, reconcile these against what that env already pins before upgrading.
+#
+# Install:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+scikit-learn==1.4.2
+
+# Survival analysis
+lifelines==0.29.0
+scikit-survival==0.22.2   # provides sksurv (RandomSurvivalForest, Surv, GradientBoosting)
+statsmodels==0.14.2       # multipletests, regression tables
+
+# Gradient-boosted / ML survival + tuning + explainability
+xgboost==2.0.3            # AFT objective requires >= 1.6
+lightgbm==4.3.0
+optuna==3.6.1
+shap==0.45.1
+
+# Plotting
+matplotlib==3.8.4
+seaborn==0.13.2
+
+# Excel I/O (pandas read_excel/to_excel engine)
+openpyxl==3.1.2
