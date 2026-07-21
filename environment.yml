@@ -1,0 +1,45 @@
+# Conda environment for the GENIE BPC BRCA brain-metastasis analysis.
+#
+# Mirror of requirements.txt for conda/mamba users. The plan
+# (docs/plans/finish-project-run-notebooks-plan.md) registers a Jupyter kernel
+# named `genie-brainmet`; this env name matches so `nbconvert --execute` can pin it.
+#
+# Create / update:
+#   conda env create -f environment.yml        # or: mamba env create -f environment.yml
+#   conda activate genie-brainmet
+#   python -m ipykernel install --user --name genie-brainmet
+#
+# If you are instead extending the author's existing `tcga-analysis` env, install the
+# missing packages into that env rather than creating this one, and reconcile pins first.
+name: genie-brainmet
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+
+  # Core scientific stack (numpy <2 so scikit-survival / shap / xgboost resolve cleanly;
+  # scikit-learn 1.4 is the line scikit-survival 0.22.x supports)
+  - numpy=1.26.4
+  - pandas=2.2.2
+  - scipy=1.13.1
+  - scikit-learn=1.4.2
+
+  # Survival analysis
+  - lifelines=0.29.0
+  - scikit-survival=0.22.2
+  - statsmodels=0.14.2
+
+  # Gradient-boosted / ML survival + tuning + explainability
+  - xgboost=2.0.3        # AFT objective requires >= 1.6
+  - lightgbm=4.3.0
+  - optuna=3.6.1
+  - shap=0.45.1
+
+  # Plotting
+  - matplotlib=3.8.4
+  - seaborn=0.13.2
+
+  # Excel I/O + notebook execution
+  - openpyxl=3.1.2
+  - ipykernel
+  - nbconvert

@@ -46,16 +46,19 @@ architecture overview, [`CONTRIBUTING.md`](CONTRIBUTING.md) for developer conven
 
 ## Prerequisites and setup
 
-The Python survival + ML stack is pinned in [`requirements.txt`](requirements.txt) (a
-coherent Python 3.9-3.11 constellation). There is no `environment.yml` or `renv.lock`
-yet; the R packages below are still installed manually.
+The Python survival + ML stack is pinned in [`requirements.txt`](requirements.txt) (pip) and
+[`environment.yml`](environment.yml) (conda), a coherent Python 3.9-3.11 constellation. There
+is no R `renv.lock` yet; the R packages below are still installed manually.
 
 ### Python
 
 ```zsh
-python3 -m venv .venv
-source .venv/bin/activate
+# pip
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+
+# or conda / mamba (env name matches the notebook kernel `genie-brainmet`)
+conda env create -f environment.yml && conda activate genie-brainmet
 ```
 
 `requirements.txt` covers everything the scripts and notebooks import: pandas, numpy,

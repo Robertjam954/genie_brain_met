@@ -25,7 +25,7 @@ you finish.
 - [ ] Sensitivity checks on the fitted survival / ML models
 
 ## 5. Reporting & repo hygiene
-- [x] Add requirements.txt / environment.yml with pinned versions (Python `requirements.txt` added; environment.yml / renv.lock still pending)
+- [x] Add requirements.txt / environment.yml with pinned versions (Python `requirements.txt` + conda `environment.yml` added; R `renv.lock` still pending)
 - [ ] Flesh out root README with setup + pipeline run order
 - [x] Move/archive AI-workflow tutorial folders cluttering the research repo (-> `archive/`)
 - [ ] Publication figures finalized in `reports/figures/`
