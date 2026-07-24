@@ -78,3 +78,17 @@ The work is organized around three analytic aims:
 This is a research codebase, not a clinical or production decision-support tool. It operates
 on de-identified public datasets and is intended for analysis and publication, not for
 guiding individual patient care.
+
+## Related reference workflow
+
+The repo also carries the CBBio candidate driver-gene workflow (Leila Mirsadeghi;
+`notebooks/Workflow_CBBio.pdf`, run notes in `docs/CBBio_workflow.md`) as reference material:
+four driver callers (MutSigCV, OncodriveCLUST, OncodriveFM, NetBox) feed one `-log10(p)`
+feature each into an SVM/ANN/RF ensemble with an algebraic combiner to prioritize candidate
+driver genes. Its method citations and tool sources are in `references/REFERENCES.md` (§2-§3).
+
+## References
+
+See [`references/REFERENCES.md`](references/REFERENCES.md) for the full bibliography: source
+papers, the AFT-in-XGBoost basis for the ML modeling, the CBBio driver-gene method and its
+cited papers, and the data sources.

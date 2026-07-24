@@ -82,3 +82,10 @@ concordance indices printed to stdout).
 
 Commit only code and generated result tables/figures intended for the manuscript - never
 raw patient-level data.
+
+## References
+
+The full bibliography lives in [`references/REFERENCES.md`](references/REFERENCES.md) (source
+papers, the CBBio driver-gene method and its cited papers, and driver-caller tool sources).
+When adding a method or tool, cite it there and link from the relevant prep doc rather than
+inlining full references.
