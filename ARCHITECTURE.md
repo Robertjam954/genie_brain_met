@@ -131,6 +131,23 @@ numeric finding.
 - Data source: GENIE BPC breast-cancer cBioPortal study export (MAF mutation files plus
   clinical tables).
 
-Auxiliary top-level folders (`self-documenting-ai-agent/`, `claude-md-memory-workflow/`,
-`context-engineering-workflow.md`) are AI-engineering workflow tutorials kept alongside the
-research code and are not part of the analytic pipeline.
+## Candidate driver-gene workflow (reference)
+
+`notebooks/Workflow_CBBio.pdf` (= `src/Workflow_CBBio.pdf`) documents the CBBio candidate
+driver-gene fusion method (Leila Mirsadeghi): four driver callers (MutSigCV, OncodriveCLUST,
+OncodriveFM, NetBox) rank genes by p-value, each contributes one `-log10(p)` feature per
+gene, and an SVM/ANN/RF ensemble with an algebraic (average-score) combiner outputs the final
+candidate-driver-gene set. Run notes are reproduced in `docs/CBBio_workflow.md`; the method
+citations and caller-tool sources are in `references/REFERENCES.md` (§2-§3). This is reference
+material - the caller tools and ensemble scripts are external prerequisites, not committed to
+this repo.
+
+## References
+
+`references/REFERENCES.md` is the full bibliography: source-paper PDFs (§1), the CBBio method
+and its cited papers (§2), driver-caller software sources (§3), data sources (§4), and the
+workflow-methodology background (§5).
+
+Auxiliary content under `archive/` (`self-documenting-ai-agent/`, `claude-md-memory-workflow/`,
+`context-engineering-workflow.md`, `plan-template.md`) is AI-engineering workflow tutorial
+material kept alongside the research code and is not part of the analytic pipeline.
