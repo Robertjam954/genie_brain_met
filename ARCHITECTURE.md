@@ -22,6 +22,16 @@ raw GENIE BPC cBioPortal export
   -> analytic CSVs read by modeling from   data/processed/extracted_variables_genie_data.csv
   -> Aim 1 / 2 / 3 analyses (Python)
   -> tables + figures      src/modeling/genie/aimN/, manuscript components/genie/aimN/
+
+the same analytic frame also feeds the eight-step order-of-operations protocol:
+  -> descriptive           (R)      -> Table 1 + Figure 1 PRISMA-style cohort flow chart
+  -> risk models           (R)      -> cumulative incidence + Fine-Gray (death competing),
+                                      KM/log-rank + Cox PH, per-gene sHR/HR with BH q
+  -> gene selection        (Python) -> selected_genes.txt
+  -> Random Survival Forest (Python) -> C-index / time-dependent AUC / Brier,
+                                      permutation importance + partial dependence
+  -> tables + figures      src/modeling/genie/{descriptive,risk_models,rsf}/,
+                           manuscript components/genie/{descriptive,risk_models,rsf}/
 ```
 
 **Important location nuance.** The data-prep script *writes* its
@@ -124,12 +134,38 @@ numeric finding.
 
 ## Key technologies
 
-- Python: pandas, numpy, lifelines (KM, Cox PH, Schoenfeld, AFT fitters, Fine-Gray),
-  statsmodels, scipy, scikit-learn, xgboost (AFT objective), matplotlib, seaborn.
+- Python: pandas, numpy, lifelines (KM, Cox PH, Schoenfeld, AFT fitters), scikit-survival
+  (Random Survival Forest, time-dependent AUC, Brier score, IPCW concordance), statsmodels,
+  scipy, scikit-learn, xgboost (AFT objective), matplotlib, seaborn. Note lifelines has no
+  Fine-Gray fitter; the competing-risk model is the R `survival::finegray()` route (the
+  reference to a lifelines Fine-Gray fitter in the legacy
+  `stratifiedKM_CoxFG_feature_prep_AFT.py` does not resolve).
 - R: tidyverse (dplyr, readr, tidyr, purrr, stringr), data.table, openxlsx, broom,
-  lubridate, xgboost, SHAPforxgboost.
+  lubridate, xgboost, SHAPforxgboost. The order-of-operations scripts (`_lib.R`,
+  `table1_prisma_descriptive.R`, `finegray_cox_risk_models.R`) use base R plus `survival`
+  only, so they run on a stock R install.
 - Data source: GENIE BPC breast-cancer cBioPortal study export (MAF mutation files plus
   clinical tables).
+
+## Order-of-operations protocol
+
+A second analytic track over the same frame, specified step by step in
+`docs/analysis_order_of_operations.md`: import and preprocess (`src/modeling/_lib.R`) ->
+Table 1 and a PRISMA-style cohort flow chart
+(`src/exploratory data analysis/table1_prisma_descriptive.R`) -> cumulative incidence and
+Fine-Gray subdistribution hazards with death as the competing risk, plus KM/log-rank and
+Cox PH for overall survival (`src/modeling/finegray_cox_risk_models.R`) -> gene selection
+from those risk models (`src/modeling/select_risk_model_genes.py`) -> a Random Survival
+Forest for time to brain metastasis with permutation importance and partial dependence
+(`src/modeling/rsf_time_to_brain_met.py`).
+
+Contract between stages: the R risk-model stage writes `finegray_gene_subhazards.csv` and
+`cox_os_gene_hazards.csv` (both keyed on `gene`, carrying the ratio, 95% CI, p, and BH q);
+the Python selection stage reads them and writes `selected_genes.txt`; the RSF stage reads
+that list and falls back to every `G_top10_*` column when it is absent. All three read the
+same canonical frame, so a stage can be re-run in isolation. Death is treated as censoring
+in the RSF (a single right-censored endpoint), which is why the competing-risk
+interpretation stays with the Fine-Gray model.
 
 ## Candidate driver-gene workflow (reference)
 
@@ -145,8 +181,9 @@ this repo.
 ## References
 
 `references/REFERENCES.md` is the full bibliography: source-paper PDFs (§1), the CBBio method
-and its cited papers (§2), driver-caller software sources (§3), data sources (§4), and the
-workflow-methodology background (§5).
+and its cited papers (§2), driver-caller software sources (§3), the statistical methods used
+by the analysis pipeline (§4), data sources (§5), and the workflow-methodology background
+(§6).
 
 Auxiliary content under `archive/` (`self-documenting-ai-agent/`, `claude-md-memory-workflow/`,
 `context-engineering-workflow.md`, `plan-template.md`) is AI-engineering workflow tutorial

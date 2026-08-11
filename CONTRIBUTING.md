@@ -53,6 +53,15 @@ The pipeline is run stage by stage:
 5. Analyze (Python): run the Aim 1/2/3 scripts; they take a `--cohort genie`
    argument and write CSVs to `src/modeling/genie/aimN/` and figures to
    `manuscript components/genie/aimN/`.
+6. Order-of-operations protocol (R + Python), in this order:
+   `table1_prisma_descriptive.R` -> `finegray_cox_risk_models.R` ->
+   `select_risk_model_genes.py` -> `rsf_time_to_brain_met.py`. Each takes `--cohort` and
+   writes to `src/modeling/genie/{descriptive,risk_models,rsf}/` plus the matching
+   `manuscript components/` subdirectory. The step order matters: gene selection reads the
+   risk-model tables, and the RSF reads `selected_genes.txt`. See
+   [`docs/analysis_order_of_operations.md`](docs/analysis_order_of_operations.md). Keep
+   these four scripts on base R + `survival` (R side) so they run without a tidyverse
+   install, and keep the minimum-events guards in place.
 
 The survival + XGBoost documentation in `src/modeling/README_survival_AFT_pipeline.md`
 describes a standalone `survival_and_xgb_analysis.py` CLI (`--xlsx`, `--time-col`,
