@@ -35,14 +35,18 @@ src/
 notebooks/                          Descriptive / OS / time-to-brain-met plotting notebooks
 reports/figures/                    Rendered PNG figures (aim1, aim2, aim3, ml_benchmark)
 manuscript components/             Publication-figure PDFs/PNGs (currently genie/aim1 only)
-docs/                               results_dashboard.html + manuscript-planning PDFs + plans
-references/                         Source-paper PDFs and study materials
+docs/                               results_dashboard.html + manuscript-planning PDFs +
+                                    plans + CBBio_workflow.md (driver-gene workflow notes)
+references/                         Source-paper PDFs, study materials, and REFERENCES.md
 data/                              Raw / master workbooks (git-ignored; see Data below)
 ```
 
 See [`PRODUCT.md`](PRODUCT.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) for the product and
-architecture overview, [`CONTRIBUTING.md`](CONTRIBUTING.md) for developer conventions, and
-`docs/results_dashboard.html` for the (unverified) figure dashboard.
+architecture overview, [`CONTRIBUTING.md`](CONTRIBUTING.md) for developer conventions,
+[`references/REFERENCES.md`](references/REFERENCES.md) for the full bibliography (source
+papers, the CBBio driver-gene method, and the papers/tools it cites), and
+`docs/results_dashboard.html` for the (unverified) figure dashboard. A complete
+file-by-file inventory is in [Repository file inventory](#repository-file-inventory) below.
 
 ## Prerequisites and setup
 
@@ -170,9 +174,103 @@ use absolute, machine-specific paths internally and will need editing.
 There is no automated test suite. Validate changes by re-running the relevant stage and
 sanity-checking the printed diagnostics and output tables/figures.
 
-## Auxiliary content (not part of the analytic pipeline)
+## Repository file inventory
 
-The top-level `self-documenting-ai-agent/`, `claude-md-memory-workflow/`,
-`context-engineering-workflow.md`, `plan-template.md`, and the `.claude/` Azure skill files
-are AI-engineering workflow scaffolding kept alongside the research code. They are unrelated
-to the brain-metastasis analysis and look out of place in a research repo.
+Every tracked file needed to understand and run the project, grouped by directory. Raw and
+derived data are git-ignored (see [Data](#data)) and are not listed here.
+
+### Prep docs (repo root)
+
+- `README.md` - this file: pipeline structure, setup, run order, inventory.
+- `PRODUCT.md` - product/aims overview.
+- `ARCHITECTURE.md` - pipeline structure, inputs/outputs, data contracts.
+- `CONTRIBUTING.md` - developer conventions and setup.
+- `STATUS.md` - live completion checklist.
+- `requirements.txt`, `environment.yml` - pinned Python (pip) and conda environments.
+- `finish-project-run-notebooks-plan.md` - plan for running the remaining notebooks.
+- `.gitignore` - excludes `data/`, CSV/XLSX, and extracted-variable caches.
+
+### `src/data collection and processing/` - ETL
+
+- `pull_genie_data.R` - pull raw GENIE BPC study folders + HUGO annotations -> `data/extracted_variables_of_interest.xlsx`.
+- `extract_variables_of_interest.R` - near-duplicate of `pull_genie_data.R`.
+- `harmonize_genie.py` - build the GENIE analytic frame (mutation aggregation, clinical recoding, cohort/endpoints).
+- `harmonize_tcga.py`, `harmonize_breast_msk_2018.py` - harmonizers for the TCGA and MSK-2018 cohorts.
+- `enrich_harmonized.py` - add alias, competing-event, and regimen-derived columns in place.
+- `add_pathways_genie_bpc.R` - gene-binary + Sanchez-Vega pathway builder (currently a 0-byte stub).
+- `harmonization_spec.md` - the canonical analytic-schema contract (one row per `SAMPLE_ID`).
+- `missing_analysis_table.py` - missingness audit CSV + rendered table (`--cohort`).
+- `create_deidentified_dataset.R` - de-identification (references offline Windows paths).
+- `date_handling_template.R` - date-handling helper template.
+- `metadata template.pdf` - dataset-metadata template.
+
+### `src/exploratory data analysis/` - Aim 1 association
+
+- `gene_prevtable_oncoprint_forest.py` - gene/pathway prevalence, Fisher exact, prevalence ratios, forest plots, oncoprints.
+- `univariate and multivariate regression df and tables.py` - logistic regression of `any_brain_met` (statsmodels).
+- `aim1_top10_pq_table.py` - top-10 gene p/q table.
+- `calculatecorrelation_regressions.R` - correlation / regression (R).
+- `genomic exploratory analysis with tables and plots.rtf`, `retrieve tcga genie data.rtf` - exploratory notes.
+
+### `src/modeling/` - survival + ML
+
+- `_lib.py` - shared backbone: `CohortSpec`, `load_cohort()`, `load_top_genes()`, `prep_covariates()`, `drop_low_variance()`.
+- `proportional_hazard_afttest.py` - Aim 2 (time to brain met): KM + log-rank, Cox PH + Schoenfeld, AFT by AIC.
+- `aim3_os.py` - Aim 3 (overall survival), same machinery with a minimum-events guard.
+- `xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py` - XGBoost-AFT trainer.
+- `xgb_aft_shap_feature_importance.py` - SHAP feature importance for the XGBoost-AFT model.
+- `stratifiedKM_CoxFG_feature_prep_AFT.py` - older standalone KM/Cox/Fine-Gray/AFT driver (legacy schema).
+- `shap analysis and plot generation.R` - SHAP plots via `SHAPforxgboost`.
+- `survival_and_xgb_analysis.ipynb` - combined KM/Cox/Fine-Gray/XGBoost-AFT notebook.
+- `README_survival_AFT_pipeline.md` - modeling pipeline notes (ported vs legacy).
+
+### `notebooks/`
+
+- `descriptiveplots.ipynb`, `osplots.ipynb`, `timebrainmettplots.ipynb`, `coxvsaft_error_os.ipynb` - plotting/diagnostic notebooks.
+- `retrieval_metadata_recode.ipynb` - retrieval + metadata recoding.
+- `data merge and preprocessing markdowm.md`, `project notebook template.md` - notebook docs/templates.
+- `Workflow_CBBio.pdf` - candidate driver-gene workflow diagram (see below).
+
+### CBBio driver-gene workflow
+
+- `src/Workflow_CBBio.pdf`, `notebooks/Workflow_CBBio.pdf` - the CBBio workflow diagram.
+- `docs/CBBio_workflow.md` - run notes reproduced from the CBBio v0.1 package (tools, commands, ensemble).
+- `references/REFERENCES.md` §2-§3 - the CBBio method, its cited papers, and the caller-tool sources.
+
+### `docs/`, `references/`, `reports/`, `manuscript components/`
+
+- `docs/results_dashboard.html`, `docs/index.html` - the (unverified) figure dashboard.
+- `docs/plans/finish-project-run-notebooks-plan.md` - notebook-run plan.
+- `docs/*.pdf` - manuscript revision plan and intro/methods structure edits.
+- `references/*.pdf` - source-paper PDFs and study materials (indexed in `references/REFERENCES.md` §1).
+- `references/REFERENCES.md` - full bibliography.
+- `reports/figures/{aim1,aim2,aim3,ml_benchmark}/*.png` - rendered figures.
+- `manuscript components/genie/aim1/*.pdf` - publication PDFs for the GENIE Aim 1 tables.
+
+### `wiki/`
+
+- `Home.md`, `Getting-Started.md`, `Analysis-Aims.md`, `Architecture-and-Data-Flow.md`,
+  `Data-Schema-and-Harmonization.md`, `Pipeline-Run-Guide.md`, `Known-Issues-and-Gaps.md`,
+  `Contributing.md` - project wiki.
+
+### `archive/` - auxiliary content (not part of the analytic pipeline)
+
+The `archive/self-documenting-ai-agent/`, `archive/claude-md-memory-workflow/`,
+`archive/context-engineering-workflow.md`, and `archive/plan-template.md` files are
+AI-engineering workflow scaffolding kept alongside the research code (see
+`references/REFERENCES.md` §5). They are unrelated to the brain-metastasis analysis.
+
+## References
+
+Full bibliography: [`references/REFERENCES.md`](references/REFERENCES.md). Key items:
+
+- **AFT survival modeling** - Barnwal et al., "Survival regression with accelerated failure
+  time model in XGBoost" (basis for the `xgb_aft_*` scripts).
+- **Brain-metastasis genomics** - meta-analysis of breast-cancer brain-metastasis genomics
+  (motivates Aim 1).
+- **CBBio candidate driver-gene method** (Leila Mirsadeghi) - four driver callers
+  (MutSigCV, OncodriveCLUST, OncodriveFM, NetBox) -> per-gene `-log10(p)` features ->
+  SVM/ANN/RF ensemble with an algebraic combiner; workflow in
+  [`docs/CBBio_workflow.md`](docs/CBBio_workflow.md), citations in `references/REFERENCES.md`
+  §2, tool sources in §3.
+- **Data** - AACR Project GENIE BPC BRCA (via cBioPortal); Sanchez-Vega oncogenic pathways.
