@@ -57,6 +57,13 @@ The work is organized around three analytic aims:
   oncogenic pathway flags.
 - **Classical and ML survival analysis side by side.** Cox PH (with assumption diagnostics),
   AFT, and XGBoost-AFT, allowing comparison of interpretable and predictive approaches.
+- **Competing-risk brain-metastasis risk and a prediction model.** An eight-step protocol
+  (`docs/analysis_order_of_operations.md`) adds Table 1 and a PRISMA-style cohort flow chart,
+  cumulative incidence and Fine-Gray subdistribution hazards that treat death as a competing
+  risk rather than as censoring, gene selection driven by those risk models, and a Random
+  Survival Forest for time to brain metastasis evaluated with the concordance index,
+  time-dependent AUC, and the Brier score, then explained with permutation importance and
+  partial dependence.
 - **Manuscript-oriented outputs.** Analyses emit CSV result tables (Aim scripts write to
   `src/modeling/genie/aimN/`; a GENIE Aim 1 subset is committed under `src/data reports/`)
   and publication figures/PDFs (`manuscript components/`, `reports/figures/`). Output
