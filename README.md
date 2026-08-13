@@ -22,6 +22,7 @@ oncogenic pathways, and clinical features most drive brain metastasis and surviv
 | **2 - Time to brain met** | Time from diagnosis to brain metastasis, in the no-CNS-at-diagnosis cohort | Kaplan-Meier + log-rank, Cox PH + scaled Schoenfeld diagnostics, AFT distribution selection by AIC |
 | **3 - Overall survival** | Overall survival in the brain-mets-ever cohort | Same KM / Cox / AFT machinery, with a minimum-events guard |
 | **ML benchmark** | Predictive survival modeling | XGBoost with the AFT objective, concordance-index evaluation, SHAP-based feature importance (Python + R) |
+| **Competing-risk + RSF protocol** | Brain-met risk accounting for death, and prediction of time to brain met | Table 1 + PRISMA-style cohort flow chart, Aalen-Johansen cumulative incidence, Fine-Gray subdistribution hazards, Cox PH, risk-model-driven gene selection, Random Survival Forest with time-dependent AUC / Brier score, permutation importance + partial dependence. See [`docs/analysis_order_of_operations.md`](docs/analysis_order_of_operations.md) |
 
 ## Repository layout
 
@@ -36,7 +37,8 @@ notebooks/                          Descriptive / OS / time-to-brain-met plottin
 reports/figures/                    Rendered PNG figures (aim1, aim2, aim3, ml_benchmark)
 manuscript components/             Publication-figure PDFs/PNGs (currently genie/aim1 only)
 docs/                               results_dashboard.html + manuscript-planning PDFs +
-                                    plans + CBBio_workflow.md (driver-gene workflow notes)
+                                    plans + analysis_order_of_operations.md (8-step protocol)
+                                    + CBBio_workflow.md (driver-gene workflow notes)
 references/                         Source-paper PDFs, study materials, and REFERENCES.md
 data/                              Raw / master workbooks (git-ignored; see Data below)
 ```
@@ -79,6 +81,12 @@ rather than building a fresh venv, reconcile the pins against that env first
 install.packages(c("dplyr", "readr", "tidyr", "purrr", "stringr", "data.table",
                    "openxlsx", "broom", "lubridate", "xgboost", "SHAPforxgboost"))
 ```
+
+The descriptive and risk-modeling scripts of the order-of-operations protocol
+(`table1_prisma_descriptive.R`, `finegray_cox_risk_models.R`, `_lib.R`) deliberately use
+only base R plus `survival`, which ships with R - `survival::finegray()` provides the
+Fine-Gray subdistribution model, so no extra package is required. `readxl` or `openxlsx`
+is needed only when their `--data` argument points at an `.xlsx` file.
 
 ### Data
 
@@ -171,6 +179,23 @@ use absolute, machine-specific paths internally and will need editing.
    still on the legacy schema. See `src/modeling/README_survival_AFT_pipeline.md` for the
    full breakdown of what is ported vs legacy.
 
+8. **Competing-risk + RSF protocol (R + Python).** The eight-step order of operations -
+   Table 1 and a PRISMA-style cohort flow chart, cumulative incidence and Fine-Gray
+   subdistribution hazards with death as the competing risk, Cox PH for overall survival,
+   gene selection from those risk models, then a Random Survival Forest for time to brain
+   metastasis with permutation importance and partial dependence.
+   ```zsh
+   Rscript "src/exploratory data analysis/table1_prisma_descriptive.R" --cohort genie
+   Rscript "src/modeling/finegray_cox_risk_models.R" --cohort genie
+   python "src/modeling/select_risk_model_genes.py" --cohort genie
+   python "src/modeling/rsf_time_to_brain_met.py" --cohort genie
+   ```
+   Tables go to `src/modeling/genie/{descriptive,risk_models,rsf}/`, figures to
+   `manuscript components/genie/{descriptive,risk_models,rsf}/`. The R scripts also accept
+   `--data PATH` for a `.csv`/`.xlsx` frame outside `data/processed/`. Full step-by-step
+   spec, output manifest, and modeling notes:
+   [`docs/analysis_order_of_operations.md`](docs/analysis_order_of_operations.md).
+
 There is no automated test suite. Validate changes by re-running the relevant stage and
 sanity-checking the printed diagnostics and output tables/figures.
 
@@ -209,12 +234,17 @@ derived data are git-ignored (see [Data](#data)) and are not listed here.
 - `gene_prevtable_oncoprint_forest.py` - gene/pathway prevalence, Fisher exact, prevalence ratios, forest plots, oncoprints.
 - `univariate and multivariate regression df and tables.py` - logistic regression of `any_brain_met` (statsmodels).
 - `aim1_top10_pq_table.py` - top-10 gene p/q table.
+- `table1_prisma_descriptive.R` - steps 1-3 of the order of operations: import, preprocessing, Table 1 (overall and by brain-met status), and Figure 1 PRISMA-style cohort flow chart.
 - `calculatecorrelation_regressions.R` - correlation / regression (R).
 - `genomic exploratory analysis with tables and plots.rtf`, `retrieve tcga genie data.rtf` - exploratory notes.
 
 ### `src/modeling/` - survival + ML
 
 - `_lib.py` - shared backbone: `CohortSpec`, `load_cohort()`, `load_top_genes()`, `prep_covariates()`, `drop_low_variance()`.
+- `_lib.R` - the R counterpart: `read_any()` (csv/tsv/xlsx), `preprocess()` (factors, durations, event flags), `gene_columns()`, `usable_covariates()`, `parse_args()`.
+- `finegray_cox_risk_models.R` - step 4: cumulative incidence + Fine-Gray subdistribution hazards for brain met (death competing), KM/log-rank + Cox PH for overall survival, per-gene estimates with BH q-values.
+- `select_risk_model_genes.py` - step 5: gene selection from the step-4 tables (`q < 0.05` in Fine-Gray, or `HR > 1` and `p < 0.05` in Cox PH).
+- `rsf_time_to_brain_met.py` - steps 6-7: Random Survival Forest for time to brain met (5-fold CV tuning; C-index, time-dependent AUC, Brier score) plus permutation importance and partial dependence.
 - `proportional_hazard_afttest.py` - Aim 2 (time to brain met): KM + log-rank, Cox PH + Schoenfeld, AFT by AIC.
 - `aim3_os.py` - Aim 3 (overall survival), same machinery with a minimum-events guard.
 - `xgb_aft_preprocessing_feature_constuction_train_validate_evaluate.py` - XGBoost-AFT trainer.
@@ -239,6 +269,7 @@ derived data are git-ignored (see [Data](#data)) and are not listed here.
 
 ### `docs/`, `references/`, `reports/`, `manuscript components/`
 
+- `docs/analysis_order_of_operations.md` - the eight-step analysis protocol, the file implementing each step, and the full output manifest.
 - `docs/results_dashboard.html`, `docs/index.html` - the (unverified) figure dashboard.
 - `docs/plans/finish-project-run-notebooks-plan.md` - notebook-run plan.
 - `docs/*.pdf` - manuscript revision plan and intro/methods structure edits.
@@ -258,7 +289,7 @@ derived data are git-ignored (see [Data](#data)) and are not listed here.
 The `archive/self-documenting-ai-agent/`, `archive/claude-md-memory-workflow/`,
 `archive/context-engineering-workflow.md`, and `archive/plan-template.md` files are
 AI-engineering workflow scaffolding kept alongside the research code (see
-`references/REFERENCES.md` §5). They are unrelated to the brain-metastasis analysis.
+`references/REFERENCES.md` §6). They are unrelated to the brain-metastasis analysis.
 
 ## References
 
@@ -273,4 +304,9 @@ Full bibliography: [`references/REFERENCES.md`](references/REFERENCES.md). Key i
   SVM/ANN/RF ensemble with an algebraic combiner; workflow in
   [`docs/CBBio_workflow.md`](docs/CBBio_workflow.md), citations in `references/REFERENCES.md`
   §2, tool sources in §3.
+- **Statistical methods** - Fine-Gray subdistribution hazards, Aalen-Johansen cumulative
+  incidence, Cox PH with Schoenfeld diagnostics, Kaplan-Meier / log-rank, Benjamini-Hochberg
+  FDR, Random Survival Forests, time-dependent AUC, the integrated Brier score, permutation
+  importance, and partial dependence: `references/REFERENCES.md` §4, with the protocol in
+  [`docs/analysis_order_of_operations.md`](docs/analysis_order_of_operations.md).
 - **Data** - AACR Project GENIE BPC BRCA (via cBioPortal); Sanchez-Vega oncogenic pathways.

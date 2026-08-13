@@ -89,14 +89,35 @@ commands are reproduced in `docs/CBBio_workflow.md`.
 
 Ensemble ML methods use scikit-learn (https://scikit-learn.org/stable/).
 
-## 4. Data sources
+## 4. Statistical methods used in the analysis pipeline
+
+Methods behind the eight-step protocol in `docs/analysis_order_of_operations.md`.
+
+| Method | Reference | Implementation |
+|--------|-----------|----------------|
+| Cumulative incidence with competing risks (Aalen-Johansen) | Aalen OO, Johansen S. An empirical transition matrix for non-homogeneous Markov chains based on censored observations. Scand J Stat. 1978;5(3):141-50. | `survival::survfit()` on a multi-state status factor |
+| Fine-Gray subdistribution hazards | Fine JP, Gray RJ. A proportional hazards model for the subdistribution of a competing risk. J Am Stat Assoc. 1999;94(446):496-509. | `survival::finegray()` + `coxph(..., weights = fgwt)`; `cmprsk::crr` is equivalent |
+| Cox proportional hazards | Cox DR. Regression models and life-tables. J R Stat Soc B. 1972;34(2):187-220. | `survival::coxph()`, `lifelines.CoxPHFitter` |
+| Scaled Schoenfeld residual PH test | Grambsch PM, Therneau TM. Proportional hazards tests and diagnostics based on weighted residuals. Biometrika. 1994;81(3):515-26. | `survival::cox.zph()` |
+| Kaplan-Meier estimator and log-rank test | Kaplan EL, Meier P. Nonparametric estimation from incomplete observations. J Am Stat Assoc. 1958;53(282):457-81. Mantel N. Evaluation of survival data and two new rank order statistics. Cancer Chemother Rep. 1966;50(3):163-70. | `survival::survfit()` / `survdiff()` |
+| Benjamini-Hochberg false-discovery control | Benjamini Y, Hochberg Y. Controlling the false discovery rate. J R Stat Soc B. 1995;57(1):289-300. | `stats::p.adjust(method = "BH")` |
+| Random Survival Forest | Ishwaran H, Kogalur UB, Blackstone EH, Lauer MS. Random survival forests. Ann Appl Stat. 2008;2(3):841-60. | `sksurv.ensemble.RandomSurvivalForest` |
+| Time-dependent (cumulative/dynamic) ROC AUC | Uno H, Cai T, Tian L, Wei LJ. Evaluating prediction rules for t-year survivors with censored regression models. J Am Stat Assoc. 2007;102(478):527-37. Hung H, Chiang CT. Estimation methods for time-dependent AUC with survival data. Can J Stat. 2010;38(1):8-26. | `sksurv.metrics.cumulative_dynamic_auc` |
+| Brier score / integrated Brier score for censored data | Graf E, Schmoor C, Sauerbrei W, Schumacher M. Assessment and comparison of prognostic classification schemes for survival data. Stat Med. 1999;18(17-18):2529-45. | `sksurv.metrics.integrated_brier_score` |
+| Concordance index (Harrell and IPCW variants) | Harrell FE, Califf RM, Pryor DB, Lee KL, Rosati RA. Evaluating the yield of medical tests. JAMA. 1982;247(18):2543-6. Uno H, Cai T, Pencina MJ, D'Agostino RB, Wei LJ. On the C-statistics for evaluating overall adequacy of risk prediction procedures with censored survival data. Stat Med. 2011;30(10):1105-17. | `sksurv.metrics.concordance_index_censored` / `concordance_index_ipcw` |
+| Permutation variable importance | Breiman L. Random forests. Mach Learn. 2001;45(1):5-32. | `sklearn.inspection.permutation_importance` |
+| Partial dependence | Friedman JH. Greedy function approximation: a gradient boosting machine. Ann Stat. 2001;29(5):1189-232. | computed directly in `rsf_time_to_brain_met.py` on the RSF risk score |
+| PRISMA-style flow diagram | Page MJ, McKenzie JE, Bossuyt PM, et al. The PRISMA 2020 statement. BMJ. 2021;372:n71. | drawn in `table1_prisma_descriptive.R` (a cohort-attrition diagram in the PRISMA style, not a systematic-review flow) |
+| Software | Therneau TM. A Package for Survival Analysis in R (`survival`). https://CRAN.R-project.org/package=survival · Polsterl S. scikit-survival: a library for time-to-event analysis. JMLR. 2020;21(212):1-6. https://scikit-survival.readthedocs.io | - |
+
+## 5. Data sources
 
 - AACR Project GENIE BPC (Biopharma Collaborative) breast-cancer (BRCA) release,
   via cBioPortal. HUGO gene annotations from `data/hugo_symbols.xlsx`.
 - Sanchez-Vega et al. ten oncogenic signaling pathways (used for the `pathway_*` feature
   set; see `harmonization_spec.md` sections 13-14).
 
-## 5. Workflow methodology (background)
+## 6. Workflow methodology (background)
 
 - `archive/context-engineering-workflow.md` - the context-engineering prep-docs +
   plan-then-implement workflow these docs follow.
